@@ -29,9 +29,9 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
         trg_tensor = torch.LongTensor(outputs).unsqueeze(1).to(device)
 
         with torch.no_grad():
-            output = model(sentence_tensor, trg_tensor)
-
-        best_guess = output.argmax(2)[-1, :].item()
+            output = model(sentence_tensor.T, trg_tensor.T)
+        # print(output.shape)
+        best_guess = (output.squeeze(0))[-1, :].argmax(0).item()
         outputs.append(best_guess)
 
         if best_guess == english.vocab.stoi["<eos>"]:
