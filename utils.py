@@ -24,29 +24,20 @@ def translate_sentence(model, sentence, german, english, device, max_length=50):
     # Convert to Tensor
     sentence_tensor = torch.LongTensor(text_to_indices).unsqueeze(1).to(device)
 
-    # Build encoder hidden, cell state
-    with torch.no_grad():
-        outputs_encoder, hiddens, cells = model.encoder(sentence_tensor)
-
     outputs = [english.vocab.stoi["<sos>"]]
-
-    for _ in range(max_length):
-        previous_word = torch.LongTensor([outputs[-1]]).to(device)
+    for i in range(max_length):
+        trg_tensor = torch.LongTensor(outputs).unsqueeze(1).to(device)
 
         with torch.no_grad():
-            output, hiddens, cells = model.decoder(
-                previous_word, outputs_encoder, hiddens, cells
-            )
-            best_guess = output.argmax(1).item()
+            output = model(sentence_tensor, trg_tensor)
 
+        best_guess = output.argmax(2)[-1, :].item()
         outputs.append(best_guess)
 
-        # Model predicts it's the end of the sentence
-        if output.argmax(1).item() == english.vocab.stoi["<eos>"]:
+        if best_guess == english.vocab.stoi["<eos>"]:
             break
 
     translated_sentence = [english.vocab.itos[idx] for idx in outputs]
-
     # remove start token
     return translated_sentence[1:]
 
